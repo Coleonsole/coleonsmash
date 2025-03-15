@@ -167,16 +167,24 @@ function createCharacter (templateIndex: number) {
     )
     return tempPSprite
 }
-spriteutils.createRenderable(10, function (screen2) {
-    for (let value of mp.allPlayers()) {
-        if (mp.getPlayerState(value, MultiplayerState.IsRespawnReadyToDrop) == 1) {
-            spriteutils.drawTransparentImage(img`
-                b b b b b b b b b b 
-                . b b b b b b b b . 
-                . . . . c c . . . . 
-                . b b b b b b b b . 
-                `, screen2, mp.getPlayerSprite(value).left - scene.cameraProperty(CameraProperty.Left) - 3, mp.getPlayerSprite(value).bottom - scene.cameraProperty(CameraProperty.Top))
-        }
+scene.onHitWall(SpriteKind.Player, function (sprite, location) {
+    if (tiles.tileAtLocationEquals(location, assets.tile`myTile7`) && sprite.bottom <= location.top) {
+        sprites.setDataNumber(sprite, "conveyorVelocityNextFrame", 0 - conveyorSpeed)
+    } else if (tiles.tileAtLocationEquals(location, assets.tile`myTile6`) && sprite.bottom <= location.top) {
+        sprites.setDataNumber(sprite, "conveyorVelocityNextFrame", conveyorSpeed)
+    } else if (tiles.tileAtLocationEquals(location, assets.tile`myTile12`)) {
+        tiles.setTileAt(location, assets.tile`transparency8`)
+        tempSprite = sprites.create(assets.tile`myTile12`, SpriteKind.FallingBlock)
+        tiles.placeOnTile(tempSprite, location)
+        animation.runMovementAnimation(
+        tempSprite,
+        "v 1 h 1 v -1 h -1",
+        100,
+        true
+        )
+        tempSprite.lifespan = fallingBlockDelay
+    } else {
+    	
     }
 })
 sprites.onDestroyed(SpriteKind.FallingBlock, function (sprite) {
@@ -201,849 +209,6 @@ function markThrownBy (thrower: number, throwee: number) {
     if (mp.getPlayerState(throwee, MultiplayerState.IsHoldingPlayer) != 0) {
         markThrownBy(thrower, mp.getPlayerState(throwee, MultiplayerState.IsHoldingPlayer))
     }
-}
-spriteutils.addEventHandler(spriteutils.UpdatePriorityModifier.After, spriteutils.UpdatePriority.Physics, function () {
-    for (let value of sprites.allOfKind(SpriteKind.Player)) {
-        if (sprites.readDataNumber(value, "conveyorVelocity") != 0) {
-            value.vx += 0 - sprites.readDataNumber(value, "conveyorVelocity")
-            sprites.setDataNumber(value, "conveyorVelocity", 0)
-        }
-    }
-})
-function drawWavyRainbow (source: Image, screen2: Image) {
-    for (let x = 0; x <= 115; x++) {
-        tempNumber = Math.round(Math.sin(spriteutils.degreesToRadians(x + Math.idiv(game.runtime(), 3))) * -2) + 3
-        for (let y = 0; y <= 32; y++) {
-            if (source.getPixel(x, y) != 0) {
-                screen2.setPixel(22 + x, y + tempNumber, titleColors[Math.round((x + Math.idiv(y, 2) + Math.idiv(game.runtime(), 10)) / 30) % 4])
-            }
-        }
-    }
-}
-spriteutils.createRenderable(100, function (screen2) {
-    if (gameState == "end") {
-        screen2.fill(11)
-        drawWavyRainbow(img`
-            ..............aaaaaaaaa....aaaaaaaaaa......aaaaaaa...aa......aa...aa..........aaaaaaaaaa......aaaaaaa...............
-            .............aaaaaaaaaaa..aaaaaaaaaaaa...aaaaaaaaaa.aaaa....aaaa.aaaa........aaaaaaaaaaaa...aaaaaaaaaa..............
-            .............aaaaaaaaaaaa.aaaaaaaaaaaa..aaaaaaaaaaa.aaaa....aaaa.aaaa........aaaaaaaaaaaa..aaaaaaaaaaa..............
-            .............aaaaaaaaaaaa.aaaaaaaaaaa...aaaaaaaaaa..aaaa....aaaa.aaaa.........aaaaaaaaaa...aaaaaaaaaa...............
-            .............aaaa...aaaaa.aaaa.........aaaaaa.......aaaa....aaaa.aaaa............aaaa.....aaaaaa....................
-            .............aaaa....aaaa.aaaa.........aaaaa........aaaa....aaaa.aaaa............aaaa.....aaaaa.....................
-            .............aaaa....aaaa.aaaaaa.......aaaaaaaaaa...aaaa....aaaa.aaaa............aaaa.....aaaaaaaaaa................
-            .............aaaa...aaaaa.aaaaaaa......aaaaaaaaaaa..aaaa....aaaa.aaaa............aaaa.....aaaaaaaaaaa...............
-            .............aaaaaaaaaaaa.aaaaaaa.......aaaaaaaaaaa.aaaa....aaaa.aaaa............aaaa......aaaaaaaaaaa..............
-            .............aaaaaaaaaaa..aaaaaa.........aaaaaaaaaa.aaaa....aaaa.aaaa............aaaa.......aaaaaaaaaa..............
-            .............aaaaaaaaaa...aaaa................aaaaa.aaaa....aaaa.aaaa............aaaa............aaaaa..............
-            .............aaaaaaaaaaa..aaaa...............aaaaaa.aaaaa..aaaaa.aaaa............aaaa...........aaaaaa..............
-            .............aaaa..aaaaa..aaaaaaaaaaa...aaaaaaaaaa...aaaaaaaaaa..aaaaaaaaaaa.....aaaa......aaaaaaaaaa...............
-            .............aaaa..aaaaaa.aaaaaaaaaaaa.aaaaaaaaaaa...aaaaaaaaaa..aaaaaaaaaaaa....aaaa.....aaaaaaaaaaa...............
-            .............aaaa...aaaaa.aaaaaaaaaaaa.aaaaaaaaaa.....aaaaaaaa...aaaaaaaaaaaa....aaaa.....aaaaaaaaaa................
-            ..............aa.....aaa...aaaaaaaaaa...aaaaaaa.........aaaa......aaaaaaaaaa......aa.......aaaaaaa..................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            ....................................................................................................................
-            `, screen2)
-        for (let value of mp.allPlayers()) {
-            if (mp.getPlayerState(value, MultiplayerState.Joined) != 0) {
-                screen2.fillRect(3 + 39 * (value - 1), 40, 37, 61, 15)
-                drawKOLog(value, 4 + 39 * (value - 1), 41, 5, screen2)
-                if (winners.indexOf(value) != -1) {
-                    drawWavyRainbowText(characterSelectText[mp.playerToIndex(value)], screen2)
-                }
-            }
-        }
-    }
-})
-scene.onHitWall(SpriteKind.Player, function (sprite, location) {
-    if (tiles.tileAtLocationEquals(location, assets.tile`myTile7`) && sprite.bottom <= location.top) {
-        sprites.setDataNumber(sprite, "conveyorVelocityNextFrame", 0 - conveyorSpeed)
-    } else if (tiles.tileAtLocationEquals(location, assets.tile`myTile6`) && sprite.bottom <= location.top) {
-        sprites.setDataNumber(sprite, "conveyorVelocityNextFrame", conveyorSpeed)
-    } else if (tiles.tileAtLocationEquals(location, assets.tile`myTile12`)) {
-        tiles.setTileAt(location, assets.tile`transparency8`)
-        tempSprite = sprites.create(assets.tile`myTile12`, SpriteKind.FallingBlock)
-        tiles.placeOnTile(tempSprite, location)
-        animation.runMovementAnimation(
-        tempSprite,
-        "v 1 h 1 v -1 h -1",
-        100,
-        true
-        )
-        tempSprite.lifespan = fallingBlockDelay
-    } else {
-    	
-    }
-})
-function breakaway (picker: number, upper: number) {
-    mp.setPlayerState(picker, MultiplayerState.IsHoldingPlayer, 0)
-    resetPlayerAfterHeld(upper, true)
-    mp.setPlayerState(picker, MultiplayerState.StunTimer, game.runtime() + breakawayStunTime)
-    platformer.setCharacterAnimationsEnabled(platformer.asPlatformerSprite(mp.getPlayerSprite(picker)), true)
-    setControlsEnabled(picker, false)
-}
-function drawKOLog (player2: number, left: number, top: number, columns: number, screen2: Image) {
-    col = 0
-    row = 0
-    for (let value of KOLog) {
-        if (value[0] == player2) {
-            spriteutils.drawTransparentImage(blockObject.getImageArrayProperty(blockObject.getStoredObject(mp.getPlayerSprite(value[1])), ImageArrayProp.IdleRight)[0], screen2, left + col * 7, top + 9 * row)
-            col += 1
-            if (col == columns) {
-                col = 0
-                row += 1
-            }
-        }
-    }
-}
-scene.onOverlapTile(SpriteKind.Player, assets.tile`myTile9`, function (sprite, location) {
-    if (sprite.top < location.bottom - 4) {
-        respawnCharacter(mp.indexToPlayer(players.indexOf(sprite)))
-    }
-})
-function throwPlayer (picker: number, upper: number) {
-    mp.setPlayerState(picker, MultiplayerState.IsHoldingPlayer, 0)
-    markThrownBy(picker, upper)
-    resetPlayerAfterHeld(upper, false)
-    if (platformer.hasState(platformer.asPlatformerSprite(mp.getPlayerSprite(picker)), platformer.PlatformerSpriteState.FacingLeft)) {
-        mp.getPlayerSprite(upper).vx = 0 - throwSpeed
-    } else {
-        mp.getPlayerSprite(upper).vx = throwSpeed
-    }
-    tempNumber = mp.getPlayerSprite(picker).bottom
-    mp.getPlayerSprite(picker).setImage(img`
-        3 3 3 3 3 
-        3 3 3 3 3 
-        3 3 3 3 3 
-        3 3 3 3 3 
-        3 3 3 3 3 
-        3 3 3 3 3 
-        3 3 3 3 3 
-        3 3 3 3 3 
-        `)
-    mp.getPlayerSprite(picker).bottom = tempNumber
-}
-function pickUpPlayer (picker: number, upper: number) {
-    if (mp.getPlayerState(upper, MultiplayerState.InvincibleEndTime) > game.runtime()) {
-        return
-    }
-    mp.setPlayerState(picker, MultiplayerState.IsHoldingPlayer, upper)
-    mp.setPlayerState(upper, MultiplayerState.IsPickedUp, picker)
-    if (!(checkPickupLegal(picker))) {
-        mp.setPlayerState(picker, MultiplayerState.IsHoldingPlayer, 0)
-        mp.setPlayerState(upper, MultiplayerState.IsPickedUp, 0)
-        return
-    }
-    numberPlayersHeld = countHeldPlayers(picker)
-    setControlsEnabled(upper, false)
-    platformer.setCharacterAnimationsEnabled(platformer.asPlatformerSprite(mp.getPlayerSprite(upper)), false)
-    mp.getPlayerSprite(upper).setImage(blockObject.getImageProperty(blockObject.getStoredObject(mp.getPlayerSprite(upper)), ImageProp.Sideways))
-    tempNumber = mp.getPlayerSprite(picker).bottom
-    mp.getPlayerSprite(picker).setImage(image.create(5, 8 + numberPlayersHeld * 5))
-    mp.getPlayerSprite(picker).image.fill(1)
-    mp.getPlayerSprite(picker).bottom = tempNumber
-}
-scene.onOverlapTile(SpriteKind.Player, assets.tile`myTile10`, function (sprite, location) {
-    if (sprite.left < location.right - 4) {
-        respawnCharacter(mp.indexToPlayer(players.indexOf(sprite)))
-    }
-})
-info.onCountdownEnd(function () {
-    endRound()
-})
-function startPlaying () {
-    gameMode = "race"
-    KOLog = []
-    sprites.destroyAllSpritesOfKind(SpriteKind.CameraSprite)
-    sprites.destroyAllSpritesOfKind(SpriteKind.CharacterSelect)
-    sprites.destroyAllSpritesOfKind(SpriteKind.Text)
-    p1 = createCharacter(mp.getPlayerState(mp.PlayerNumber.One, MultiplayerState.SelectedCharacter))
-    p2 = createCharacter(mp.getPlayerState(mp.PlayerNumber.Two, MultiplayerState.SelectedCharacter))
-    p3 = createCharacter(mp.getPlayerState(mp.PlayerNumber.Three, MultiplayerState.SelectedCharacter))
-    p4 = createCharacter(mp.getPlayerState(mp.PlayerNumber.Four, MultiplayerState.SelectedCharacter))
-    players = [
-    p1,
-    p2,
-    p3,
-    p4
-    ]
-    scene.setBackgroundColor(15)
-    tiles.setCurrentTilemap(tileUtil.createSmallMap(tilemap`level6`))
-    for (let value2 of mp.allPlayers()) {
-        mp.setPlayerSprite(value2, players[mp.playerToIndex(value2)])
-        setControlsEnabled(value2, true)
-        mp.setPlayerState(value2, MultiplayerState.Stock, startingStockLives)
-    }
-    camera = sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . 3 . . . . . . . . 
-        . . . . . . 3 3 3 . . . . . . . 
-        . . . . . 3 3 3 3 3 . . . . . . 
-        . . . . 3 3 3 3 3 3 3 . . . . . 
-        . . . . 3 3 3 3 3 3 3 . . . . . 
-        . . . . . 3 3 3 3 3 . . . . . . 
-        . . . . . . 3 3 3 . . . . . . . 
-        . . . . . . . 3 . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        `, SpriteKind.CameraSprite)
-    cameraTarget = sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . 7 . . . . . . . . 
-        . . . . . . 7 7 7 . . . . . . . 
-        . . . . . 7 7 7 7 7 . . . . . . 
-        . . . . 7 7 7 7 7 7 7 . . . . . 
-        . . . . 7 7 7 7 7 7 7 . . . . . 
-        . . . . . 7 7 7 7 7 . . . . . . 
-        . . . . . . 7 7 7 . . . . . . . 
-        . . . . . . . 7 . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        `, SpriteKind.CameraSprite)
-    cameraWaypoints = [
-    assets.tile`myTile1`,
-    assets.tile`myTile2`,
-    assets.tile`myTile3`,
-    assets.tile`myTile4`,
-    assets.tile`myTile16`,
-    assets.tile`myTile17`,
-    assets.tile`myTile18`,
-    assets.tile`myTile19`
-    ]
-    tiles.placeOnRandomTile(camera, cameraWaypoints[0])
-    tiles.placeOnRandomTile(cameraTarget, assets.tile`myTile11`)
-    tiles.placeOnRandomTile(cameraTarget, cameraWaypoints[1])
-    scene.centerCameraAt(camera.x, camera.y)
-    scene.cameraFollowSprite(camera)
-    camera.setFlag(SpriteFlag.Ghost, true)
-    camera.setFlag(SpriteFlag.Invisible, true)
-    cameraTarget.setFlag(SpriteFlag.Ghost, true)
-    cameraTarget.setFlag(SpriteFlag.Invisible, true)
-    pause(0)
-    turnOnWalls(assets.tile`myTile`)
-    turnOnWalls(assets.tile`myTile6`)
-    turnOnWalls(assets.tile`myTile7`)
-    turnOnWalls(assets.tile`myTile12`)
-    for (let value of mp.allPlayers()) {
-        mp.setPlayerState(value, MultiplayerState.DeathsThisRound, 0)
-        mp.setPlayerState(value, MultiplayerState.SelfKOs, 0)
-        if (gameMode != "race") {
-            mp.getPlayerSprite(value).x = scene.cameraProperty(CameraProperty.Left) + (20 + 40 * mp.playerToIndex(value))
-        } else {
-            mp.getPlayerSprite(value).x = scene.cameraProperty(CameraProperty.Left) + (30 + 6 * mp.playerToIndex(value))
-        }
-        mp.getPlayerSprite(value).top = scene.cameraProperty(CameraProperty.Top) + 20
-    }
-    for (let value of cameraWaypoints) {
-        tileUtil.coverAllTiles(value, assets.tile`myTile5`)
-    }
-    for (let value of tiles.getTilesByType(assets.tile`myTile11`)) {
-        tileUtil.coverTile(value, assets.tile`myTile20`)
-        tempLocation = value.getNeighboringLocation(CollisionDirection.Top)
-        while (tiles.tileAtLocationEquals(tempLocation, assets.tile`transparency8`)) {
-            tiles.setTileAt(tempLocation, assets.tile`myTile20`)
-            tempLocation = tempLocation.getNeighboringLocation(CollisionDirection.Top)
-        }
-        tempLocation = value.getNeighboringLocation(CollisionDirection.Bottom)
-        while (tiles.tileAtLocationEquals(tempLocation, assets.tile`transparency8`)) {
-            tiles.setTileAt(tempLocation, assets.tile`myTile20`)
-            tempLocation = tempLocation.getNeighboringLocation(CollisionDirection.Bottom)
-        }
-    }
-    for (let value of tiles.getTilesByType(assets.tile`myTile7`)) {
-        tempSprite = sprites.create(img`
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . . . . . 
-            `, SpriteKind.Decoration)
-        tiles.placeOnTile(tempSprite, value)
-        if (!(tiles.tileAtLocationEquals(value.getNeighboringLocation(CollisionDirection.Left), assets.tile`myTile7`))) {
-            animation.runImageAnimation(
-            tempSprite,
-            assets.animation`myAnim0`,
-            100,
-            true
-            )
-        } else if (!(tiles.tileAtLocationEquals(value.getNeighboringLocation(CollisionDirection.Right), assets.tile`myTile7`))) {
-            animation.runImageAnimation(
-            tempSprite,
-            assets.animation`myAnim1`,
-            100,
-            true
-            )
-        } else {
-            animation.runImageAnimation(
-            tempSprite,
-            assets.animation`myAnim`,
-            100,
-            true
-            )
-        }
-    }
-    for (let value of tiles.getTilesByType(assets.tile`myTile6`)) {
-        tempSprite = sprites.create(img`
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . . . . . 
-            . . . . . . . . 
-            `, SpriteKind.Decoration)
-        tiles.placeOnTile(tempSprite, value)
-        if (!(tiles.tileAtLocationEquals(value.getNeighboringLocation(CollisionDirection.Left), assets.tile`myTile6`))) {
-            animation.runImageAnimation(
-            tempSprite,
-            assets.animation`myAnim4`,
-            100,
-            true
-            )
-        } else if (!(tiles.tileAtLocationEquals(value.getNeighboringLocation(CollisionDirection.Right), assets.tile`myTile6`))) {
-            animation.runImageAnimation(
-            tempSprite,
-            assets.animation`myAnim3`,
-            100,
-            true
-            )
-        } else {
-            animation.runImageAnimation(
-            tempSprite,
-            assets.animation`myAnim2`,
-            100,
-            true
-            )
-        }
-    }
-    camera.follow(cameraTarget, cameraSpeed)
-    if (gameMode == "timed") {
-        info.startCountdown(matchTime)
-    }
-    gameState = "playing"
-}
-function isCharacterTaken (templateIndex: number, playerToIgnore: number) {
-    for (let value of mp.allPlayers()) {
-        if (value == playerToIgnore) {
-            continue;
-        }
-        if (mp.getPlayerState(value, MultiplayerState.SelectedCharacter) == templateIndex) {
-            return true
-        }
-    }
-    return false
-}
-scene.onOverlapTile(SpriteKind.Player, assets.tile`myTile8`, function (sprite, location) {
-    if (sprite.right > location.left + 4) {
-        respawnCharacter(mp.indexToPlayer(players.indexOf(sprite)))
-    }
-})
-function flipAnimation (anim: Image[]) {
-    tempImageArray = []
-    for (let value of anim) {
-        tempImageArray.push(value.clone())
-    }
-    for (let value of tempImageArray) {
-        value.flipX()
-    }
-    return tempImageArray
-}
-scene.onOverlapTile(SpriteKind.Player, assets.tile`myTile20`, function (sprite, location) {
-    if (gameMode == "race") {
-    	
-    }
-})
-function createCharacters () {
-    characterTemplates = [
-    blockObject.create(),
-    blockObject.create(),
-    blockObject.create(),
-    blockObject.create(),
-    blockObject.create(),
-    blockObject.create(),
-    blockObject.create(),
-    blockObject.create(),
-    blockObject.create(),
-    blockObject.create()
-    ]
-    if (true) {
-        blockObject.setImageArrayProperty(characterTemplates[0], ImageArrayProp.WalkingRight, assets.animation`p1-walking-right`)
-        blockObject.setImageArrayProperty(characterTemplates[0], ImageArrayProp.IdleRight, assets.animation`p1-idle-right`)
-        blockObject.setImageProperty(characterTemplates[0], ImageProp.Sideways, img`
-            . e e . . . . . 
-            . . e d f d 8 8 
-            . . e d d d 8 . 
-            . . e d f d 8 . 
-            . . e d d d 8 8 
-            `)
-        blockObject.setStringProperty(characterTemplates[0], StrProp.Name, "MILO")
-        blockObject.setNumberProperty(characterTemplates[0], NumProp.IdleInterval, 100)
-        blockObject.setNumberProperty(characterTemplates[0], NumProp.WalkingInterval, 75)
-    }
-    if (true) {
-        blockObject.setImageArrayProperty(characterTemplates[1], ImageArrayProp.WalkingRight, assets.animation`p2-walking-right`)
-        blockObject.setImageArrayProperty(characterTemplates[1], ImageArrayProp.IdleRight, assets.animation`p2-idle-right`)
-        blockObject.setImageProperty(characterTemplates[1], ImageProp.Sideways, img`
-            . . a . . . . . 
-            . 3 a d 1 d c c 
-            . 3 a d 6 d c . 
-            . a a d 1 d c . 
-            . a a d 6 d c c 
-            `)
-        blockObject.setStringProperty(characterTemplates[1], StrProp.Name, "PAT")
-        blockObject.setNumberProperty(characterTemplates[1], NumProp.IdleInterval, 100)
-        blockObject.setNumberProperty(characterTemplates[1], NumProp.WalkingInterval, 75)
-    }
-    if (true) {
-        blockObject.setImageArrayProperty(characterTemplates[2], ImageArrayProp.WalkingRight, assets.animation`p3-walking-right`)
-        blockObject.setImageArrayProperty(characterTemplates[2], ImageArrayProp.IdleRight, assets.animation`p3-idle-right`)
-        blockObject.setImageProperty(characterTemplates[2], ImageProp.Sideways, img`
-            . 5 5 5 1 5 5 5 
-            . 5 5 5 5 5 5 . 
-            . 5 5 5 1 5 5 . 
-            . 5 5 5 5 5 5 5 
-            . . 5 5 5 . . . 
-            `)
-        blockObject.setStringProperty(characterTemplates[2], StrProp.Name, "OMEGA")
-        blockObject.setNumberProperty(characterTemplates[2], NumProp.IdleInterval, 100)
-        blockObject.setNumberProperty(characterTemplates[2], NumProp.WalkingInterval, 75)
-    }
-    if (true) {
-        blockObject.setImageArrayProperty(characterTemplates[3], ImageArrayProp.WalkingRight, assets.animation`turnip`)
-        blockObject.setImageArrayProperty(characterTemplates[3], ImageArrayProp.IdleRight, assets.animation`turnip`)
-        blockObject.setImageProperty(characterTemplates[3], ImageProp.Sideways, img`
-            . . . 3 d d . . 
-            6 . b 3 f d d . 
-            . 6 b 3 d d d d 
-            6 . b 3 f d d . 
-            . . . 3 d d . . 
-            `)
-        blockObject.setStringProperty(characterTemplates[3], StrProp.Name, "TURNIPO")
-        blockObject.setNumberProperty(characterTemplates[3], NumProp.IdleInterval, 75)
-        blockObject.setNumberProperty(characterTemplates[3], NumProp.WalkingInterval, 75)
-    }
-    if (true) {
-        blockObject.setImageArrayProperty(characterTemplates[4], ImageArrayProp.WalkingRight, assets.animation`auto-walking-right`)
-        blockObject.setImageArrayProperty(characterTemplates[4], ImageArrayProp.IdleRight, assets.animation`auto-idle-right`)
-        blockObject.setImageProperty(characterTemplates[4], ImageProp.Sideways, img`
-            . . c 5 c . . . 
-            . b c c c c c c 
-            b b c 5 c c c . 
-            . b c c 9 c c c 
-            . . c c c . c . 
-            `)
-        blockObject.setStringProperty(characterTemplates[4], StrProp.Name, "MONOCAT")
-        blockObject.setNumberProperty(characterTemplates[4], NumProp.IdleInterval, 100)
-        blockObject.setNumberProperty(characterTemplates[4], NumProp.WalkingInterval, 100)
-    }
-    if (true) {
-        blockObject.setImageArrayProperty(characterTemplates[5], ImageArrayProp.WalkingRight, assets.animation`croc-walking-right`)
-        blockObject.setImageArrayProperty(characterTemplates[5], ImageArrayProp.IdleRight, assets.animation`croc-idle-right`)
-        blockObject.setImageProperty(characterTemplates[5], ImageProp.Sideways, img`
-            . . 7 7 . . . . 
-            . . 7 7 . . . . 
-            . 6 7 7 4 5 7 . 
-            . 7 f 7 4 5 . . 
-            . 7 7 7 7 7 7 . 
-            `)
-        blockObject.setStringProperty(characterTemplates[5], StrProp.Name, "CROC")
-        blockObject.setNumberProperty(characterTemplates[5], NumProp.IdleInterval, 100)
-        blockObject.setNumberProperty(characterTemplates[5], NumProp.WalkingInterval, 100)
-    }
-    if (true) {
-        blockObject.setImageArrayProperty(characterTemplates[6], ImageArrayProp.WalkingRight, assets.animation`bun-walking-right`)
-        blockObject.setImageArrayProperty(characterTemplates[6], ImageArrayProp.IdleRight, assets.animation`bun-idle-right`)
-        blockObject.setImageProperty(characterTemplates[6], ImageProp.Sideways, img`
-            . . 1 f 1 . . . 
-            b b 1 1 1 1 1 . 
-            3 3 1 f 1 1 . . 
-            1 1 1 1 1 1 1 . 
-            . . 1 1 1 . . . 
-            `)
-        blockObject.setStringProperty(characterTemplates[6], StrProp.Name, "BUN")
-        blockObject.setNumberProperty(characterTemplates[6], NumProp.IdleInterval, 100)
-        blockObject.setNumberProperty(characterTemplates[6], NumProp.WalkingInterval, 50)
-    }
-    if (true) {
-        blockObject.setImageArrayProperty(characterTemplates[7], ImageArrayProp.WalkingRight, assets.animation`robot-walking-right`)
-        blockObject.setImageArrayProperty(characterTemplates[7], ImageArrayProp.IdleRight, assets.animation`robot-idle-right`)
-        blockObject.setImageProperty(characterTemplates[7], ImageProp.Sideways, img`
-            . . 6 c 6 . . . 
-            . . 6 6 6 8 6 6 
-            9 6 6 c 6 8 6 . 
-            . . 6 6 6 8 6 6 
-            . . b b b . . . 
-            `)
-        blockObject.setStringProperty(characterTemplates[7], StrProp.Name, "PATB0T")
-        blockObject.setNumberProperty(characterTemplates[7], NumProp.IdleInterval, 100)
-        blockObject.setNumberProperty(characterTemplates[7], NumProp.WalkingInterval, 75)
-    }
-    if (true) {
-        blockObject.setImageArrayProperty(characterTemplates[8], ImageArrayProp.WalkingRight, assets.animation`cy-walking-right`)
-        blockObject.setImageArrayProperty(characterTemplates[8], ImageArrayProp.IdleRight, assets.animation`cy-idle-right`)
-        blockObject.setImageProperty(characterTemplates[8], ImageProp.Sideways, img`
-            . 1 1 f 1 1 1 1 
-            . 1 1 1 1 1 1 . 
-            . 1 1 f 1 1 1 . 
-            . 1 1 1 1 1 1 1 
-            . 3 . . 3 . . . 
-            `)
-        blockObject.setStringProperty(characterTemplates[8], StrProp.Name, "COSMO")
-        blockObject.setNumberProperty(characterTemplates[8], NumProp.IdleInterval, 100)
-        blockObject.setNumberProperty(characterTemplates[8], NumProp.WalkingInterval, 75)
-    }
-    if (true) {
-        blockObject.setImageArrayProperty(characterTemplates[9], ImageArrayProp.WalkingRight, assets.animation`breakfast-walking-right`)
-        blockObject.setImageArrayProperty(characterTemplates[9], ImageArrayProp.IdleRight, assets.animation`breakfast-idle-right`)
-        blockObject.setImageProperty(characterTemplates[9], ImageProp.Sideways, img`
-            . . . . e f e . . 
-            . . . e e e e e e 
-            . . . . e f e e . 
-            . . . e e e e e e 
-            . . . . . . . e . 
-            . . . . . . . . . 
-            `)
-        blockObject.setStringProperty(characterTemplates[9], StrProp.Name, "CAMMY")
-        blockObject.setNumberProperty(characterTemplates[9], NumProp.IdleInterval, 100)
-        blockObject.setNumberProperty(characterTemplates[9], NumProp.WalkingInterval, 75)
-    }
-}
-function showMainMenu () {
-    myMenu = miniMenu.createMenu(
-    miniMenu.createMenuItem("Race"),
-    miniMenu.createMenuItem("Battle"),
-    miniMenu.createMenuItem("Autoscroller")
-    )
-    myMenu.onButtonPressed(controller.A, function (selection, selectedIndex) {
-    	
-    })
-}
-function setControlsEnabled (player2: number, enabled: boolean) {
-    if (player2 == 1) {
-        platformer.moveSprite(p1, enabled, moveSpeed, controller.player1)
-    } else if (player2 == 2) {
-        platformer.moveSprite(p2, enabled, moveSpeed, controller.player2)
-    } else if (player2 == 3) {
-        platformer.moveSprite(p3, enabled, moveSpeed, controller.player3)
-    } else {
-        platformer.moveSprite(p4, enabled, moveSpeed, controller.player4)
-    }
-}
-function moveToNextWaypoint () {
-    if (tiles.tileAtLocationEquals(cameraTarget.tilemapLocation(), assets.tile`myTile11`)) {
-        if (gameMode != "race") {
-            endRound()
-        }
-    } else {
-        for (let index = 0; index <= cameraWaypoints.length - 1; index++) {
-            if (tiles.tileImageAtLocation(cameraTarget.tilemapLocation()).equals(cameraWaypoints[index])) {
-                if (tiles.getTilesByType(cameraWaypoints[index + 1]).length == 0) {
-                    if (tiles.getTilesByType(assets.tile`myTile11`).length == 0) {
-                        tiles.placeOnRandomTile(cameraTarget, cameraWaypoints[0])
-                    } else {
-                        tiles.placeOnRandomTile(cameraTarget, assets.tile`myTile11`)
-                    }
-                } else {
-                    tiles.placeOnRandomTile(cameraTarget, cameraWaypoints[index + 1])
-                }
-                cameraTarget.x += 3
-                break;
-            }
-        }
-        camera.follow(cameraTarget, 0)
-        timer.after(waypointDelayTime, function () {
-            camera.follow(cameraTarget, cameraSpeed)
-        })
-    }
-}
-mp.onButtonEvent(mp.MultiplayerButton.Left, ControllerButtonEvent.Pressed, function (player2) {
-    if (gameState == "character-select") {
-        changeCharacterSelect(player2, true)
-    }
-})
-function respawnCharacter (player2: number) {
-    if (mp.getPlayerState(player2, MultiplayerState.IsWaitingToRespawn) != 0) {
-        return
-    }
-    if (mp.getPlayerState(player2, MultiplayerState.InvincibleEndTime) > game.runtime()) {
-        return
-    }
-    if (mp.getPlayerState(player2, MultiplayerState.IsHoldingPlayer) != 0) {
-        resetPlayerAfterHeld(mp.getPlayerState(player2, MultiplayerState.IsHoldingPlayer), true)
-    }
-    mp.changePlayerStateBy(player2, MultiplayerState.DeathsThisRound, 1)
-    mp.setPlayerState(player2, MultiplayerState.IsHoldingPlayer, 0)
-    mp.setPlayerState(player2, MultiplayerState.IsWaitingToRespawn, 1)
-    if (game.runtime() < mp.getPlayerState(player2, MultiplayerState.ThrowByEndTime)) {
-        KOLog.push([mp.getPlayerState(player2, MultiplayerState.ThrownBy), player2, game.runtime()])
-    } else {
-        KOLog.push([player2, player2, game.runtime()])
-        mp.changePlayerStateBy(player2, MultiplayerState.SelfKOs, 1)
-    }
-    setControlsEnabled(player2, false)
-    platformer.setCharacterAnimationsEnabled(platformer.asPlatformerSprite(mp.getPlayerSprite(player2)), false)
-    mp.getPlayerSprite(player2).setFlag(SpriteFlag.Invisible, true)
-    mp.getPlayerSprite(player2).setFlag(SpriteFlag.Ghost, true)
-    mp.setPlayerState(player2, MultiplayerState.IsRespawnReadyToDrop, 0)
-    if (gameMode == "race") {
-        mp.changePlayerStateBy(player2, MultiplayerState.Stock, -1)
-        if (mp.getPlayerState(player2, MultiplayerState.Stock) == 0) {
-            mp.setPlayerState(player2, MultiplayerState.LostLastStockTime, game.runtime())
-            tempNumber = 0
-            for (let value of mp.allPlayers()) {
-                if (mp.getPlayerState(value, MultiplayerState.Stock) != 0) {
-                    tempNumber += 1
-                }
-            }
-            if (tempNumber == 1) {
-                endRound()
-            }
-        }
-    }
-    scene.cameraShake(2, 100)
-    music.smallCrash.play()
-    if (gameMode != "race" || mp.getPlayerState(player2, MultiplayerState.Stock) != 0) {
-        timer.after(respawnTime, function () {
-            mp.setPlayerState(player2, MultiplayerState.IsRespawnReadyToDrop, 1)
-            mp.setPlayerState(player2, MultiplayerState.RespawnTimer, game.runtime() + respawnHangTime)
-        })
-    }
-}
-controller.menu.onEvent(ControllerButtonEvent.Pressed, function () {
-    if (gameState == "character-select") {
-        if (allPlayersAreLockedIn()) {
-            startPlaying()
-        }
-    }
-})
-function endRound () {
-    gameState = "end"
-    sprites.destroyAllSpritesOfKind(SpriteKind.CameraSprite)
-    sprites.destroyAllSpritesOfKind(SpriteKind.Player)
-    characterSelectText = []
-    for (let value of mp.allPlayers()) {
-        if (mp.getPlayerState(value, MultiplayerState.Joined) != 0) {
-            characterSelectText.push(textsprite.create(blockObject.getStringProperty(blockObject.getStoredObject(mp.getPlayerSprite(value)), StrProp.Name)))
-            characterSelectText[characterSelectText.length - 1].setOutline(2, 10)
-            characterSelectText[characterSelectText.length - 1].setPosition(21 + 39 * (value - 1), 107)
-            characterSelectText[characterSelectText.length - 1].z = 200
-            characterSelectText[characterSelectText.length - 1].setFlag(SpriteFlag.RelativeToCamera, true)
-        } else {
-            characterSelectText.push(textsprite.create(""))
-        }
-    }
-    scores = [
-    0,
-    0,
-    0,
-    0
-    ]
-    if (gameMode == "race") {
-        if (true) {
-        	
-        }
-    } else {
-        for (let value of KOLog) {
-            if (value[0] == value[1]) {
-                scores[mp.playerToIndex(value[0])] = scores[mp.playerToIndex(value[0])] - 1
-            } else {
-                scores[mp.playerToIndex(value[0])] = scores[mp.playerToIndex(value[0])] + 1
-                scores[mp.playerToIndex(value[1])] = scores[mp.playerToIndex(value[1])] - 1
-            }
-        }
-    }
-    tempNumber = -9999999
-    for (let value of scores) {
-        tempNumber = Math.max(tempNumber, value)
-    }
-    winners = []
-    for (let value of mp.allPlayers()) {
-        if (mp.getPlayerState(value, MultiplayerState.Joined) != 0) {
-            if (scores[mp.playerToIndex(value)] == tempNumber) {
-                winners.push(value)
-                characterSelectText[mp.playerToIndex(value)].destroy()
-            } else {
-                characterSelectText[mp.playerToIndex(value)].setOutline(0, 10)
-                characterSelectText[mp.playerToIndex(value)].setPosition(21 + 39 * (value - 1), 109)
-            }
-        }
-    }
-}
-function startCharacterSelect () {
-    gameState = "character-select"
-    mp.setPlayerState(mp.PlayerNumber.One, MultiplayerState.SelectedCharacter, 0)
-    mp.setPlayerState(mp.PlayerNumber.One, MultiplayerState.LockedInCharacter, 0)
-    mp.setPlayerState(mp.PlayerNumber.One, MultiplayerState.Joined, 1)
-    mp.setPlayerState(mp.PlayerNumber.Two, MultiplayerState.SelectedCharacter, 1)
-    mp.setPlayerState(mp.PlayerNumber.Two, MultiplayerState.LockedInCharacter, 0)
-    if (debug) {
-        mp.setPlayerState(mp.PlayerNumber.Two, MultiplayerState.Joined, 1)
-    } else {
-        mp.setPlayerState(mp.PlayerNumber.Two, MultiplayerState.Joined, 0)
-    }
-    mp.setPlayerState(mp.PlayerNumber.Three, MultiplayerState.SelectedCharacter, 2)
-    if (debug) {
-        mp.setPlayerState(mp.PlayerNumber.Three, MultiplayerState.Joined, 1)
-    } else {
-        mp.setPlayerState(mp.PlayerNumber.Three, MultiplayerState.Joined, 0)
-    }
-    mp.setPlayerState(mp.PlayerNumber.Three, MultiplayerState.LockedInCharacter, 0)
-    mp.setPlayerState(mp.PlayerNumber.Four, MultiplayerState.SelectedCharacter, 3)
-    mp.setPlayerState(mp.PlayerNumber.Four, MultiplayerState.LockedInCharacter, 0)
-    if (debug) {
-        mp.setPlayerState(mp.PlayerNumber.Four, MultiplayerState.Joined, 1)
-    } else {
-        mp.setPlayerState(mp.PlayerNumber.Four, MultiplayerState.Joined, 0)
-    }
-    characterSelectSprites = [
-    sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        `, SpriteKind.CharacterSelect),
-    sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        `, SpriteKind.CharacterSelect),
-    sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        `, SpriteKind.CharacterSelect),
-    sprites.create(img`
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        . . . . . . . . . . . . . . . . 
-        `, SpriteKind.CharacterSelect)
-    ]
-    characterSelectText = [
-    textsprite.create(""),
-    textsprite.create(""),
-    textsprite.create(""),
-    textsprite.create("")
-    ]
-    textSprite = textsprite.create("P1 PRESS MENU TO START")
-    textSprite.setFlag(SpriteFlag.Invisible, true)
-    textSprite.z = 10
-    textSprite.setMaxFontHeight(8)
-    textSprite.setOutline(2, 10)
-    textSprite.x = 80
-    textSprite.top = 103
-    for (let value of characterSelectSprites) {
-        value.z = 10
-        value.scale = 5
-    }
-    for (let value of characterSelectText) {
-        value.z = 10
-    }
-    for (let value of mp.allPlayers()) {
-        changeCharacterSelect(value, true)
-        changeCharacterSelect(value, false)
-    }
-}
-function changeCharacterSelect (player2: number, left: boolean) {
-    if (mp.getPlayerState(player2, MultiplayerState.LockedInCharacter) != 0) {
-        return
-    }
-    if (left) {
-        mp.setPlayerState(player2, MultiplayerState.SelectedCharacter, (mp.getPlayerState(player2, MultiplayerState.SelectedCharacter) + (characterTemplates.length - 1)) % characterTemplates.length)
-        while (isCharacterTaken(mp.getPlayerState(player2, MultiplayerState.SelectedCharacter), player2)) {
-            mp.setPlayerState(player2, MultiplayerState.SelectedCharacter, (mp.getPlayerState(player2, MultiplayerState.SelectedCharacter) + (characterTemplates.length - 1)) % characterTemplates.length)
-        }
-    } else {
-        mp.setPlayerState(player2, MultiplayerState.SelectedCharacter, (mp.getPlayerState(player2, MultiplayerState.SelectedCharacter) + 1) % characterTemplates.length)
-        while (isCharacterTaken(mp.getPlayerState(player2, MultiplayerState.SelectedCharacter), player2)) {
-            mp.setPlayerState(player2, MultiplayerState.SelectedCharacter, (mp.getPlayerState(player2, MultiplayerState.SelectedCharacter) + 1) % characterTemplates.length)
-        }
-    }
-    animation.runImageAnimation(
-    characterSelectSprites[mp.playerToIndex(player2)],
-    blockObject.getImageArrayProperty(characterTemplates[mp.getPlayerState(player2, MultiplayerState.SelectedCharacter)], ImageArrayProp.IdleRight),
-    blockObject.getNumberProperty(characterTemplates[mp.getPlayerState(player2, MultiplayerState.SelectedCharacter)], NumProp.IdleInterval),
-    true
-    )
-    characterSelectText[mp.playerToIndex(player2)].setText(blockObject.getStringProperty(characterTemplates[mp.getPlayerState(player2, MultiplayerState.SelectedCharacter)], StrProp.Name))
 }
 spriteutils.createRenderable(1, function (screen2) {
     if (gameState == "character-select") {
@@ -1571,6 +736,787 @@ spriteutils.createRenderable(1, function (screen2) {
         }
     }
 })
+spriteutils.addEventHandler(spriteutils.UpdatePriorityModifier.After, spriteutils.UpdatePriority.Physics, function () {
+    for (let value of sprites.allOfKind(SpriteKind.Player)) {
+        if (sprites.readDataNumber(value, "conveyorVelocity") != 0) {
+            value.vx += 0 - sprites.readDataNumber(value, "conveyorVelocity")
+            sprites.setDataNumber(value, "conveyorVelocity", 0)
+        }
+    }
+})
+spriteutils.createRenderable(10, function (screen2) {
+    for (let value of mp.allPlayers()) {
+        if (mp.getPlayerState(value, MultiplayerState.IsRespawnReadyToDrop) == 1) {
+            spriteutils.drawTransparentImage(img`
+                b b b b b b b b b b 
+                . b b b b b b b b . 
+                . . . . c c . . . . 
+                . b b b b b b b b . 
+                `, screen2, mp.getPlayerSprite(value).left - scene.cameraProperty(CameraProperty.Left) - 3, mp.getPlayerSprite(value).bottom - scene.cameraProperty(CameraProperty.Top))
+        }
+    }
+})
+function drawWavyRainbow (source: Image, screen2: Image) {
+    for (let x = 0; x <= 115; x++) {
+        tempNumber = Math.round(Math.sin(spriteutils.degreesToRadians(x + Math.idiv(game.runtime(), 3))) * -2) + 3
+        for (let y = 0; y <= 32; y++) {
+            if (source.getPixel(x, y) != 0) {
+                screen2.setPixel(22 + x, y + tempNumber, titleColors[Math.round((x + Math.idiv(y, 2) + Math.idiv(game.runtime(), 10)) / 30) % 4])
+            }
+        }
+    }
+}
+function breakaway (picker: number, upper: number) {
+    mp.setPlayerState(picker, MultiplayerState.IsHoldingPlayer, 0)
+    resetPlayerAfterHeld(upper, true)
+    mp.setPlayerState(picker, MultiplayerState.StunTimer, game.runtime() + breakawayStunTime)
+    platformer.setCharacterAnimationsEnabled(platformer.asPlatformerSprite(mp.getPlayerSprite(picker)), true)
+    setControlsEnabled(picker, false)
+}
+function drawKOLog (player2: number, left: number, top: number, columns: number, screen2: Image) {
+    col = 0
+    row = 0
+    for (let value of KOLog) {
+        if (value[0] == player2) {
+            spriteutils.drawTransparentImage(blockObject.getImageArrayProperty(blockObject.getStoredObject(mp.getPlayerSprite(value[1])), ImageArrayProp.IdleRight)[0], screen2, left + col * 7, top + 9 * row)
+            col += 1
+            if (col == columns) {
+                col = 0
+                row += 1
+            }
+        }
+    }
+}
+scene.onOverlapTile(SpriteKind.Player, assets.tile`myTile9`, function (sprite, location) {
+    if (sprite.top < location.bottom - 4) {
+        respawnCharacter(mp.indexToPlayer(players.indexOf(sprite)))
+    }
+})
+function throwPlayer (picker: number, upper: number) {
+    mp.setPlayerState(picker, MultiplayerState.IsHoldingPlayer, 0)
+    markThrownBy(picker, upper)
+    resetPlayerAfterHeld(upper, false)
+    if (platformer.hasState(platformer.asPlatformerSprite(mp.getPlayerSprite(picker)), platformer.PlatformerSpriteState.FacingLeft)) {
+        mp.getPlayerSprite(upper).vx = 0 - throwSpeed
+    } else {
+        mp.getPlayerSprite(upper).vx = throwSpeed
+    }
+    tempNumber = mp.getPlayerSprite(picker).bottom
+    mp.getPlayerSprite(picker).setImage(img`
+        3 3 3 3 3 
+        3 3 3 3 3 
+        3 3 3 3 3 
+        3 3 3 3 3 
+        3 3 3 3 3 
+        3 3 3 3 3 
+        3 3 3 3 3 
+        3 3 3 3 3 
+        `)
+    mp.getPlayerSprite(picker).bottom = tempNumber
+}
+function pickUpPlayer (picker: number, upper: number) {
+    if (mp.getPlayerState(upper, MultiplayerState.InvincibleEndTime) > game.runtime()) {
+        return
+    }
+    mp.setPlayerState(picker, MultiplayerState.IsHoldingPlayer, upper)
+    mp.setPlayerState(upper, MultiplayerState.IsPickedUp, picker)
+    if (!(checkPickupLegal(picker))) {
+        mp.setPlayerState(picker, MultiplayerState.IsHoldingPlayer, 0)
+        mp.setPlayerState(upper, MultiplayerState.IsPickedUp, 0)
+        return
+    }
+    numberPlayersHeld = countHeldPlayers(picker)
+    setControlsEnabled(upper, false)
+    platformer.setCharacterAnimationsEnabled(platformer.asPlatformerSprite(mp.getPlayerSprite(upper)), false)
+    mp.getPlayerSprite(upper).setImage(blockObject.getImageProperty(blockObject.getStoredObject(mp.getPlayerSprite(upper)), ImageProp.Sideways))
+    tempNumber = mp.getPlayerSprite(picker).bottom
+    mp.getPlayerSprite(picker).setImage(image.create(5, 8 + numberPlayersHeld * 5))
+    mp.getPlayerSprite(picker).image.fill(1)
+    mp.getPlayerSprite(picker).bottom = tempNumber
+}
+info.onCountdownEnd(function () {
+    endRound()
+})
+function startPlaying () {
+    gameMode = "race"
+    KOLog = []
+    sprites.destroyAllSpritesOfKind(SpriteKind.CameraSprite)
+    sprites.destroyAllSpritesOfKind(SpriteKind.CharacterSelect)
+    sprites.destroyAllSpritesOfKind(SpriteKind.Text)
+    p1 = createCharacter(mp.getPlayerState(mp.PlayerNumber.One, MultiplayerState.SelectedCharacter))
+    p2 = createCharacter(mp.getPlayerState(mp.PlayerNumber.Two, MultiplayerState.SelectedCharacter))
+    p3 = createCharacter(mp.getPlayerState(mp.PlayerNumber.Three, MultiplayerState.SelectedCharacter))
+    p4 = createCharacter(mp.getPlayerState(mp.PlayerNumber.Four, MultiplayerState.SelectedCharacter))
+    players = [
+    p1,
+    p2,
+    p3,
+    p4
+    ]
+    scene.setBackgroundColor(15)
+    tiles.setCurrentTilemap(tileUtil.createSmallMap(tilemap`level6`))
+    for (let value2 of mp.allPlayers()) {
+        mp.setPlayerSprite(value2, players[mp.playerToIndex(value2)])
+        setControlsEnabled(value2, true)
+        mp.setPlayerState(value2, MultiplayerState.Stock, startingStockLives)
+    }
+    camera = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . 3 . . . . . . . . 
+        . . . . . . 3 3 3 . . . . . . . 
+        . . . . . 3 3 3 3 3 . . . . . . 
+        . . . . 3 3 3 3 3 3 3 . . . . . 
+        . . . . 3 3 3 3 3 3 3 . . . . . 
+        . . . . . 3 3 3 3 3 . . . . . . 
+        . . . . . . 3 3 3 . . . . . . . 
+        . . . . . . . 3 . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.CameraSprite)
+    cameraTarget = sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . 7 . . . . . . . . 
+        . . . . . . 7 7 7 . . . . . . . 
+        . . . . . 7 7 7 7 7 . . . . . . 
+        . . . . 7 7 7 7 7 7 7 . . . . . 
+        . . . . 7 7 7 7 7 7 7 . . . . . 
+        . . . . . 7 7 7 7 7 . . . . . . 
+        . . . . . . 7 7 7 . . . . . . . 
+        . . . . . . . 7 . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.CameraSprite)
+    cameraWaypoints = [
+    assets.tile`myTile1`,
+    assets.tile`myTile2`,
+    assets.tile`myTile3`,
+    assets.tile`myTile4`,
+    assets.tile`myTile16`,
+    assets.tile`myTile17`,
+    assets.tile`myTile18`,
+    assets.tile`myTile19`
+    ]
+    tiles.placeOnRandomTile(camera, cameraWaypoints[0])
+    tiles.placeOnRandomTile(cameraTarget, assets.tile`myTile11`)
+    tiles.placeOnRandomTile(cameraTarget, cameraWaypoints[1])
+    scene.centerCameraAt(camera.x, camera.y)
+    scene.cameraFollowSprite(camera)
+    camera.setFlag(SpriteFlag.Ghost, true)
+    camera.setFlag(SpriteFlag.Invisible, true)
+    cameraTarget.setFlag(SpriteFlag.Ghost, true)
+    cameraTarget.setFlag(SpriteFlag.Invisible, true)
+    pause(0)
+    turnOnWalls(assets.tile`myTile`)
+    turnOnWalls(assets.tile`myTile6`)
+    turnOnWalls(assets.tile`myTile7`)
+    turnOnWalls(assets.tile`myTile12`)
+    for (let value of mp.allPlayers()) {
+        mp.setPlayerState(value, MultiplayerState.DeathsThisRound, 0)
+        mp.setPlayerState(value, MultiplayerState.SelfKOs, 0)
+        if (gameMode != "race") {
+            mp.getPlayerSprite(value).x = scene.cameraProperty(CameraProperty.Left) + (20 + 40 * mp.playerToIndex(value))
+        } else {
+            mp.getPlayerSprite(value).x = scene.cameraProperty(CameraProperty.Left) + (30 + 6 * mp.playerToIndex(value))
+        }
+        mp.getPlayerSprite(value).top = scene.cameraProperty(CameraProperty.Top) + 20
+    }
+    for (let value of cameraWaypoints) {
+        tileUtil.coverAllTiles(value, assets.tile`myTile5`)
+    }
+    for (let value of tiles.getTilesByType(assets.tile`myTile11`)) {
+        tileUtil.coverTile(value, assets.tile`myTile20`)
+        tempLocation = value.getNeighboringLocation(CollisionDirection.Top)
+        while (tiles.tileAtLocationEquals(tempLocation, assets.tile`transparency8`)) {
+            tiles.setTileAt(tempLocation, assets.tile`myTile20`)
+            tempLocation = tempLocation.getNeighboringLocation(CollisionDirection.Top)
+        }
+        tempLocation = value.getNeighboringLocation(CollisionDirection.Bottom)
+        while (tiles.tileAtLocationEquals(tempLocation, assets.tile`transparency8`)) {
+            tiles.setTileAt(tempLocation, assets.tile`myTile20`)
+            tempLocation = tempLocation.getNeighboringLocation(CollisionDirection.Bottom)
+        }
+    }
+    for (let value of tiles.getTilesByType(assets.tile`myTile7`)) {
+        tempSprite = sprites.create(img`
+            . . . . . . . . 
+            . . . . . . . . 
+            . . . . . . . . 
+            . . . . . . . . 
+            . . . . . . . . 
+            . . . . . . . . 
+            . . . . . . . . 
+            . . . . . . . . 
+            `, SpriteKind.Decoration)
+        tiles.placeOnTile(tempSprite, value)
+        if (!(tiles.tileAtLocationEquals(value.getNeighboringLocation(CollisionDirection.Left), assets.tile`myTile7`))) {
+            animation.runImageAnimation(
+            tempSprite,
+            assets.animation`myAnim0`,
+            100,
+            true
+            )
+        } else if (!(tiles.tileAtLocationEquals(value.getNeighboringLocation(CollisionDirection.Right), assets.tile`myTile7`))) {
+            animation.runImageAnimation(
+            tempSprite,
+            assets.animation`myAnim1`,
+            100,
+            true
+            )
+        } else {
+            animation.runImageAnimation(
+            tempSprite,
+            assets.animation`myAnim`,
+            100,
+            true
+            )
+        }
+    }
+    for (let value of tiles.getTilesByType(assets.tile`myTile6`)) {
+        tempSprite = sprites.create(img`
+            . . . . . . . . 
+            . . . . . . . . 
+            . . . . . . . . 
+            . . . . . . . . 
+            . . . . . . . . 
+            . . . . . . . . 
+            . . . . . . . . 
+            . . . . . . . . 
+            `, SpriteKind.Decoration)
+        tiles.placeOnTile(tempSprite, value)
+        if (!(tiles.tileAtLocationEquals(value.getNeighboringLocation(CollisionDirection.Left), assets.tile`myTile6`))) {
+            animation.runImageAnimation(
+            tempSprite,
+            assets.animation`myAnim4`,
+            100,
+            true
+            )
+        } else if (!(tiles.tileAtLocationEquals(value.getNeighboringLocation(CollisionDirection.Right), assets.tile`myTile6`))) {
+            animation.runImageAnimation(
+            tempSprite,
+            assets.animation`myAnim3`,
+            100,
+            true
+            )
+        } else {
+            animation.runImageAnimation(
+            tempSprite,
+            assets.animation`myAnim2`,
+            100,
+            true
+            )
+        }
+    }
+    camera.follow(cameraTarget, cameraSpeed)
+    if (gameMode == "timed") {
+        info.startCountdown(matchTime)
+    }
+    gameState = "playing"
+}
+function isCharacterTaken (templateIndex: number, playerToIgnore: number) {
+    for (let value of mp.allPlayers()) {
+        if (value == playerToIgnore) {
+            continue;
+        }
+        if (mp.getPlayerState(value, MultiplayerState.SelectedCharacter) == templateIndex) {
+            return true
+        }
+    }
+    return false
+}
+function flipAnimation (anim: Image[]) {
+    tempImageArray = []
+    for (let value of anim) {
+        tempImageArray.push(value.clone())
+    }
+    for (let value of tempImageArray) {
+        value.flipX()
+    }
+    return tempImageArray
+}
+scene.onOverlapTile(SpriteKind.Player, assets.tile`myTile20`, function (sprite, location) {
+    if (gameMode == "race") {
+    	
+    }
+})
+function createCharacters () {
+    characterTemplates = [
+    blockObject.create(),
+    blockObject.create(),
+    blockObject.create(),
+    blockObject.create(),
+    blockObject.create(),
+    blockObject.create(),
+    blockObject.create(),
+    blockObject.create(),
+    blockObject.create(),
+    blockObject.create()
+    ]
+    if (true) {
+        blockObject.setImageArrayProperty(characterTemplates[0], ImageArrayProp.WalkingRight, assets.animation`p1-walking-right`)
+        blockObject.setImageArrayProperty(characterTemplates[0], ImageArrayProp.IdleRight, assets.animation`p1-idle-right`)
+        blockObject.setImageProperty(characterTemplates[0], ImageProp.Sideways, img`
+            . e e . . . . . 
+            . . e d f d 8 8 
+            . . e d d d 8 . 
+            . . e d f d 8 . 
+            . . e d d d 8 8 
+            `)
+        blockObject.setStringProperty(characterTemplates[0], StrProp.Name, "MILO")
+        blockObject.setNumberProperty(characterTemplates[0], NumProp.IdleInterval, 100)
+        blockObject.setNumberProperty(characterTemplates[0], NumProp.WalkingInterval, 75)
+    }
+    if (true) {
+        blockObject.setImageArrayProperty(characterTemplates[1], ImageArrayProp.WalkingRight, assets.animation`p2-walking-right`)
+        blockObject.setImageArrayProperty(characterTemplates[1], ImageArrayProp.IdleRight, assets.animation`p2-idle-right`)
+        blockObject.setImageProperty(characterTemplates[1], ImageProp.Sideways, img`
+            . . a . . . . . 
+            . 3 a d 1 d c c 
+            . 3 a d 6 d c . 
+            . a a d 1 d c . 
+            . a a d 6 d c c 
+            `)
+        blockObject.setStringProperty(characterTemplates[1], StrProp.Name, "PAT")
+        blockObject.setNumberProperty(characterTemplates[1], NumProp.IdleInterval, 100)
+        blockObject.setNumberProperty(characterTemplates[1], NumProp.WalkingInterval, 75)
+    }
+    if (true) {
+        blockObject.setImageArrayProperty(characterTemplates[2], ImageArrayProp.WalkingRight, assets.animation`p3-walking-right`)
+        blockObject.setImageArrayProperty(characterTemplates[2], ImageArrayProp.IdleRight, assets.animation`p3-idle-right`)
+        blockObject.setImageProperty(characterTemplates[2], ImageProp.Sideways, img`
+            . 5 5 5 1 5 5 5 
+            . 5 5 5 5 5 5 . 
+            . 5 5 5 1 5 5 . 
+            . 5 5 5 5 5 5 5 
+            . . 5 5 5 . . . 
+            `)
+        blockObject.setStringProperty(characterTemplates[2], StrProp.Name, "OMEGA")
+        blockObject.setNumberProperty(characterTemplates[2], NumProp.IdleInterval, 100)
+        blockObject.setNumberProperty(characterTemplates[2], NumProp.WalkingInterval, 75)
+    }
+    if (true) {
+        blockObject.setImageArrayProperty(characterTemplates[3], ImageArrayProp.WalkingRight, assets.animation`turnip`)
+        blockObject.setImageArrayProperty(characterTemplates[3], ImageArrayProp.IdleRight, assets.animation`turnip`)
+        blockObject.setImageProperty(characterTemplates[3], ImageProp.Sideways, img`
+            . . . 3 d d . . 
+            6 . b 3 f d d . 
+            . 6 b 3 d d d d 
+            6 . b 3 f d d . 
+            . . . 3 d d . . 
+            `)
+        blockObject.setStringProperty(characterTemplates[3], StrProp.Name, "TURNIPO")
+        blockObject.setNumberProperty(characterTemplates[3], NumProp.IdleInterval, 75)
+        blockObject.setNumberProperty(characterTemplates[3], NumProp.WalkingInterval, 75)
+    }
+    if (true) {
+        blockObject.setImageArrayProperty(characterTemplates[4], ImageArrayProp.WalkingRight, assets.animation`auto-walking-right`)
+        blockObject.setImageArrayProperty(characterTemplates[4], ImageArrayProp.IdleRight, assets.animation`auto-idle-right`)
+        blockObject.setImageProperty(characterTemplates[4], ImageProp.Sideways, img`
+            . . c 5 c . . . 
+            . b c c c c c c 
+            b b c 5 c c c . 
+            . b c c 9 c c c 
+            . . c c c . c . 
+            `)
+        blockObject.setStringProperty(characterTemplates[4], StrProp.Name, "MONOCAT")
+        blockObject.setNumberProperty(characterTemplates[4], NumProp.IdleInterval, 100)
+        blockObject.setNumberProperty(characterTemplates[4], NumProp.WalkingInterval, 100)
+    }
+    if (true) {
+        blockObject.setImageArrayProperty(characterTemplates[5], ImageArrayProp.WalkingRight, assets.animation`croc-walking-right`)
+        blockObject.setImageArrayProperty(characterTemplates[5], ImageArrayProp.IdleRight, assets.animation`croc-idle-right`)
+        blockObject.setImageProperty(characterTemplates[5], ImageProp.Sideways, img`
+            . . 7 7 . . . . 
+            . . 7 7 . . . . 
+            . 6 7 7 4 5 7 . 
+            . 7 f 7 4 5 . . 
+            . 7 7 7 7 7 7 . 
+            `)
+        blockObject.setStringProperty(characterTemplates[5], StrProp.Name, "CROC")
+        blockObject.setNumberProperty(characterTemplates[5], NumProp.IdleInterval, 100)
+        blockObject.setNumberProperty(characterTemplates[5], NumProp.WalkingInterval, 100)
+    }
+    if (true) {
+        blockObject.setImageArrayProperty(characterTemplates[6], ImageArrayProp.WalkingRight, assets.animation`bun-walking-right`)
+        blockObject.setImageArrayProperty(characterTemplates[6], ImageArrayProp.IdleRight, assets.animation`bun-idle-right`)
+        blockObject.setImageProperty(characterTemplates[6], ImageProp.Sideways, img`
+            . . 1 f 1 . . . 
+            b b 1 1 1 1 1 . 
+            3 3 1 f 1 1 . . 
+            1 1 1 1 1 1 1 . 
+            . . 1 1 1 . . . 
+            `)
+        blockObject.setStringProperty(characterTemplates[6], StrProp.Name, "BUN")
+        blockObject.setNumberProperty(characterTemplates[6], NumProp.IdleInterval, 100)
+        blockObject.setNumberProperty(characterTemplates[6], NumProp.WalkingInterval, 50)
+    }
+    if (true) {
+        blockObject.setImageArrayProperty(characterTemplates[7], ImageArrayProp.WalkingRight, assets.animation`robot-walking-right`)
+        blockObject.setImageArrayProperty(characterTemplates[7], ImageArrayProp.IdleRight, assets.animation`robot-idle-right`)
+        blockObject.setImageProperty(characterTemplates[7], ImageProp.Sideways, img`
+            . . 6 c 6 . . . 
+            . . 6 6 6 8 6 6 
+            9 6 6 c 6 8 6 . 
+            . . 6 6 6 8 6 6 
+            . . b b b . . . 
+            `)
+        blockObject.setStringProperty(characterTemplates[7], StrProp.Name, "PATB0T")
+        blockObject.setNumberProperty(characterTemplates[7], NumProp.IdleInterval, 100)
+        blockObject.setNumberProperty(characterTemplates[7], NumProp.WalkingInterval, 75)
+    }
+    if (true) {
+        blockObject.setImageArrayProperty(characterTemplates[8], ImageArrayProp.WalkingRight, assets.animation`cy-walking-right`)
+        blockObject.setImageArrayProperty(characterTemplates[8], ImageArrayProp.IdleRight, assets.animation`cy-idle-right`)
+        blockObject.setImageProperty(characterTemplates[8], ImageProp.Sideways, img`
+            . 1 1 f 1 1 1 1 
+            . 1 1 1 1 1 1 . 
+            . 1 1 f 1 1 1 . 
+            . 1 1 1 1 1 1 1 
+            . 3 . . 3 . . . 
+            `)
+        blockObject.setStringProperty(characterTemplates[8], StrProp.Name, "COSMO")
+        blockObject.setNumberProperty(characterTemplates[8], NumProp.IdleInterval, 100)
+        blockObject.setNumberProperty(characterTemplates[8], NumProp.WalkingInterval, 75)
+    }
+    if (true) {
+        blockObject.setImageArrayProperty(characterTemplates[9], ImageArrayProp.WalkingRight, assets.animation`breakfast-walking-right`)
+        blockObject.setImageArrayProperty(characterTemplates[9], ImageArrayProp.IdleRight, assets.animation`breakfast-idle-right`)
+        blockObject.setImageProperty(characterTemplates[9], ImageProp.Sideways, img`
+            . . . . e f e . . 
+            . . . e e e e e e 
+            . . . . e f e e . 
+            . . . e e e e e e 
+            . . . . . . . e . 
+            . . . . . . . . . 
+            `)
+        blockObject.setStringProperty(characterTemplates[9], StrProp.Name, "CAMMY")
+        blockObject.setNumberProperty(characterTemplates[9], NumProp.IdleInterval, 100)
+        blockObject.setNumberProperty(characterTemplates[9], NumProp.WalkingInterval, 75)
+    }
+}
+function showMainMenu () {
+    myMenu = miniMenu.createMenu(
+    miniMenu.createMenuItem("Race"),
+    miniMenu.createMenuItem("Battle"),
+    miniMenu.createMenuItem("Autoscroller")
+    )
+    myMenu.onButtonPressed(controller.A, function (selection, selectedIndex) {
+    	
+    })
+}
+function setControlsEnabled (player2: number, enabled: boolean) {
+    if (player2 == 1) {
+        platformer.moveSprite(p1, enabled, moveSpeed, controller.player1)
+    } else if (player2 == 2) {
+        platformer.moveSprite(p2, enabled, moveSpeed, controller.player2)
+    } else if (player2 == 3) {
+        platformer.moveSprite(p3, enabled, moveSpeed, controller.player3)
+    } else {
+        platformer.moveSprite(p4, enabled, moveSpeed, controller.player4)
+    }
+}
+function moveToNextWaypoint () {
+    if (tiles.tileAtLocationEquals(cameraTarget.tilemapLocation(), assets.tile`myTile11`)) {
+        if (gameMode != "race") {
+            endRound()
+        }
+    } else {
+        for (let index = 0; index <= cameraWaypoints.length - 1; index++) {
+            if (tiles.tileImageAtLocation(cameraTarget.tilemapLocation()).equals(cameraWaypoints[index])) {
+                if (tiles.getTilesByType(cameraWaypoints[index + 1]).length == 0) {
+                    if (tiles.getTilesByType(assets.tile`myTile11`).length == 0) {
+                        tiles.placeOnRandomTile(cameraTarget, cameraWaypoints[0])
+                    } else {
+                        tiles.placeOnRandomTile(cameraTarget, assets.tile`myTile11`)
+                    }
+                } else {
+                    tiles.placeOnRandomTile(cameraTarget, cameraWaypoints[index + 1])
+                }
+                cameraTarget.x += 3
+                break;
+            }
+        }
+        camera.follow(cameraTarget, 0)
+        timer.after(waypointDelayTime, function () {
+            camera.follow(cameraTarget, cameraSpeed)
+        })
+    }
+}
+scene.onOverlapTile(SpriteKind.Player, assets.tile`myTile8`, function (sprite, location) {
+    if (sprite.right > location.left + 4) {
+        respawnCharacter(mp.indexToPlayer(players.indexOf(sprite)))
+    }
+})
+mp.onButtonEvent(mp.MultiplayerButton.Left, ControllerButtonEvent.Pressed, function (player2) {
+    if (gameState == "character-select") {
+        changeCharacterSelect(player2, true)
+    }
+})
+function respawnCharacter (player2: number) {
+    if (mp.getPlayerState(player2, MultiplayerState.IsWaitingToRespawn) != 0) {
+        return
+    }
+    if (mp.getPlayerState(player2, MultiplayerState.InvincibleEndTime) > game.runtime()) {
+        return
+    }
+    if (mp.getPlayerState(player2, MultiplayerState.IsHoldingPlayer) != 0) {
+        resetPlayerAfterHeld(mp.getPlayerState(player2, MultiplayerState.IsHoldingPlayer), true)
+    }
+    mp.changePlayerStateBy(player2, MultiplayerState.DeathsThisRound, 1)
+    mp.setPlayerState(player2, MultiplayerState.IsHoldingPlayer, 0)
+    mp.setPlayerState(player2, MultiplayerState.IsWaitingToRespawn, 1)
+    if (game.runtime() < mp.getPlayerState(player2, MultiplayerState.ThrowByEndTime)) {
+        KOLog.push([mp.getPlayerState(player2, MultiplayerState.ThrownBy), player2, game.runtime()])
+    } else {
+        KOLog.push([player2, player2, game.runtime()])
+        mp.changePlayerStateBy(player2, MultiplayerState.SelfKOs, 1)
+    }
+    setControlsEnabled(player2, false)
+    platformer.setCharacterAnimationsEnabled(platformer.asPlatformerSprite(mp.getPlayerSprite(player2)), false)
+    mp.getPlayerSprite(player2).setFlag(SpriteFlag.Invisible, true)
+    mp.getPlayerSprite(player2).setFlag(SpriteFlag.Ghost, true)
+    mp.setPlayerState(player2, MultiplayerState.IsRespawnReadyToDrop, 0)
+    if (gameMode == "race") {
+        mp.changePlayerStateBy(player2, MultiplayerState.Stock, -1)
+        if (mp.getPlayerState(player2, MultiplayerState.Stock) == 0) {
+            mp.setPlayerState(player2, MultiplayerState.LostLastStockTime, game.runtime())
+            tempNumber = 0
+            for (let value of mp.allPlayers()) {
+                if (mp.getPlayerState(value, MultiplayerState.Stock) != 0) {
+                    tempNumber += 1
+                }
+            }
+            if (tempNumber == 1) {
+                endRound()
+            }
+        }
+    }
+    scene.cameraShake(2, 100)
+    music.smallCrash.play()
+    if (gameMode != "race" || mp.getPlayerState(player2, MultiplayerState.Stock) != 0) {
+        timer.after(respawnTime, function () {
+            mp.setPlayerState(player2, MultiplayerState.IsRespawnReadyToDrop, 1)
+            mp.setPlayerState(player2, MultiplayerState.RespawnTimer, game.runtime() + respawnHangTime)
+        })
+    }
+}
+controller.menu.onEvent(ControllerButtonEvent.Pressed, function () {
+    if (gameState == "character-select") {
+        if (allPlayersAreLockedIn()) {
+            startPlaying()
+        }
+    }
+})
+function endRound () {
+    gameState = "end"
+    sprites.destroyAllSpritesOfKind(SpriteKind.CameraSprite)
+    sprites.destroyAllSpritesOfKind(SpriteKind.Player)
+    characterSelectText = []
+    for (let value of mp.allPlayers()) {
+        if (mp.getPlayerState(value, MultiplayerState.Joined) != 0) {
+            characterSelectText.push(textsprite.create(blockObject.getStringProperty(blockObject.getStoredObject(mp.getPlayerSprite(value)), StrProp.Name)))
+            characterSelectText[characterSelectText.length - 1].setOutline(2, 10)
+            characterSelectText[characterSelectText.length - 1].setPosition(21 + 39 * (value - 1), 107)
+            characterSelectText[characterSelectText.length - 1].z = 200
+            characterSelectText[characterSelectText.length - 1].setFlag(SpriteFlag.RelativeToCamera, true)
+        } else {
+            characterSelectText.push(textsprite.create(""))
+        }
+    }
+    scores = [
+    0,
+    0,
+    0,
+    0
+    ]
+    if (gameMode == "race") {
+        if (true) {
+        	
+        }
+    } else {
+        for (let value of KOLog) {
+            if (value[0] == value[1]) {
+                scores[mp.playerToIndex(value[0])] = scores[mp.playerToIndex(value[0])] - 1
+            } else {
+                scores[mp.playerToIndex(value[0])] = scores[mp.playerToIndex(value[0])] + 1
+                scores[mp.playerToIndex(value[1])] = scores[mp.playerToIndex(value[1])] - 1
+            }
+        }
+    }
+    tempNumber = -9999999
+    for (let value of scores) {
+        tempNumber = Math.max(tempNumber, value)
+    }
+    winners = []
+    for (let value of mp.allPlayers()) {
+        if (mp.getPlayerState(value, MultiplayerState.Joined) != 0) {
+            if (scores[mp.playerToIndex(value)] == tempNumber) {
+                winners.push(value)
+                characterSelectText[mp.playerToIndex(value)].destroy()
+            } else {
+                characterSelectText[mp.playerToIndex(value)].setOutline(0, 10)
+                characterSelectText[mp.playerToIndex(value)].setPosition(21 + 39 * (value - 1), 109)
+            }
+        }
+    }
+}
+function startCharacterSelect () {
+    gameState = "character-select"
+    mp.setPlayerState(mp.PlayerNumber.One, MultiplayerState.SelectedCharacter, 0)
+    mp.setPlayerState(mp.PlayerNumber.One, MultiplayerState.LockedInCharacter, 0)
+    mp.setPlayerState(mp.PlayerNumber.One, MultiplayerState.Joined, 1)
+    mp.setPlayerState(mp.PlayerNumber.Two, MultiplayerState.SelectedCharacter, 1)
+    mp.setPlayerState(mp.PlayerNumber.Two, MultiplayerState.LockedInCharacter, 0)
+    if (debug) {
+        mp.setPlayerState(mp.PlayerNumber.Two, MultiplayerState.Joined, 1)
+    } else {
+        mp.setPlayerState(mp.PlayerNumber.Two, MultiplayerState.Joined, 0)
+    }
+    mp.setPlayerState(mp.PlayerNumber.Three, MultiplayerState.SelectedCharacter, 2)
+    if (debug) {
+        mp.setPlayerState(mp.PlayerNumber.Three, MultiplayerState.Joined, 1)
+    } else {
+        mp.setPlayerState(mp.PlayerNumber.Three, MultiplayerState.Joined, 0)
+    }
+    mp.setPlayerState(mp.PlayerNumber.Three, MultiplayerState.LockedInCharacter, 0)
+    mp.setPlayerState(mp.PlayerNumber.Four, MultiplayerState.SelectedCharacter, 3)
+    mp.setPlayerState(mp.PlayerNumber.Four, MultiplayerState.LockedInCharacter, 0)
+    if (debug) {
+        mp.setPlayerState(mp.PlayerNumber.Four, MultiplayerState.Joined, 1)
+    } else {
+        mp.setPlayerState(mp.PlayerNumber.Four, MultiplayerState.Joined, 0)
+    }
+    characterSelectSprites = [
+    sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.CharacterSelect),
+    sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.CharacterSelect),
+    sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.CharacterSelect),
+    sprites.create(img`
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        . . . . . . . . . . . . . . . . 
+        `, SpriteKind.CharacterSelect)
+    ]
+    characterSelectText = [
+    textsprite.create(""),
+    textsprite.create(""),
+    textsprite.create(""),
+    textsprite.create("")
+    ]
+    textSprite = textsprite.create("P1 PRESS MENU TO START")
+    textSprite.setFlag(SpriteFlag.Invisible, true)
+    textSprite.z = 10
+    textSprite.setMaxFontHeight(8)
+    textSprite.setOutline(2, 10)
+    textSprite.x = 80
+    textSprite.top = 103
+    for (let value of characterSelectSprites) {
+        value.z = 10
+        value.scale = 5
+    }
+    for (let value of characterSelectText) {
+        value.z = 10
+    }
+    for (let value of mp.allPlayers()) {
+        changeCharacterSelect(value, true)
+        changeCharacterSelect(value, false)
+    }
+}
+function changeCharacterSelect (player2: number, left: boolean) {
+    if (mp.getPlayerState(player2, MultiplayerState.LockedInCharacter) != 0) {
+        return
+    }
+    if (left) {
+        mp.setPlayerState(player2, MultiplayerState.SelectedCharacter, (mp.getPlayerState(player2, MultiplayerState.SelectedCharacter) + (characterTemplates.length - 1)) % characterTemplates.length)
+        while (isCharacterTaken(mp.getPlayerState(player2, MultiplayerState.SelectedCharacter), player2)) {
+            mp.setPlayerState(player2, MultiplayerState.SelectedCharacter, (mp.getPlayerState(player2, MultiplayerState.SelectedCharacter) + (characterTemplates.length - 1)) % characterTemplates.length)
+        }
+    } else {
+        mp.setPlayerState(player2, MultiplayerState.SelectedCharacter, (mp.getPlayerState(player2, MultiplayerState.SelectedCharacter) + 1) % characterTemplates.length)
+        while (isCharacterTaken(mp.getPlayerState(player2, MultiplayerState.SelectedCharacter), player2)) {
+            mp.setPlayerState(player2, MultiplayerState.SelectedCharacter, (mp.getPlayerState(player2, MultiplayerState.SelectedCharacter) + 1) % characterTemplates.length)
+        }
+    }
+    animation.runImageAnimation(
+    characterSelectSprites[mp.playerToIndex(player2)],
+    blockObject.getImageArrayProperty(characterTemplates[mp.getPlayerState(player2, MultiplayerState.SelectedCharacter)], ImageArrayProp.IdleRight),
+    blockObject.getNumberProperty(characterTemplates[mp.getPlayerState(player2, MultiplayerState.SelectedCharacter)], NumProp.IdleInterval),
+    true
+    )
+    characterSelectText[mp.playerToIndex(player2)].setText(blockObject.getStringProperty(characterTemplates[mp.getPlayerState(player2, MultiplayerState.SelectedCharacter)], StrProp.Name))
+}
 function resetPlayerAfterHeld (upper: number, clearStack: boolean) {
     if (mp.getPlayerState(upper, MultiplayerState.IsPickedUp) == 0) {
         return
@@ -1647,6 +1593,60 @@ function dropPlayer (player2: number) {
         }
     }
 }
+scene.onOverlapTile(SpriteKind.Player, assets.tile`myTile10`, function (sprite, location) {
+    if (sprite.left < location.right - 4) {
+        respawnCharacter(mp.indexToPlayer(players.indexOf(sprite)))
+    }
+})
+spriteutils.createRenderable(100, function (screen2) {
+    if (gameState == "end") {
+        screen2.fill(11)
+        drawWavyRainbow(img`
+            ..............aaaaaaaaa....aaaaaaaaaa......aaaaaaa...aa......aa...aa..........aaaaaaaaaa......aaaaaaa...............
+            .............aaaaaaaaaaa..aaaaaaaaaaaa...aaaaaaaaaa.aaaa....aaaa.aaaa........aaaaaaaaaaaa...aaaaaaaaaa..............
+            .............aaaaaaaaaaaa.aaaaaaaaaaaa..aaaaaaaaaaa.aaaa....aaaa.aaaa........aaaaaaaaaaaa..aaaaaaaaaaa..............
+            .............aaaaaaaaaaaa.aaaaaaaaaaa...aaaaaaaaaa..aaaa....aaaa.aaaa.........aaaaaaaaaa...aaaaaaaaaa...............
+            .............aaaa...aaaaa.aaaa.........aaaaaa.......aaaa....aaaa.aaaa............aaaa.....aaaaaa....................
+            .............aaaa....aaaa.aaaa.........aaaaa........aaaa....aaaa.aaaa............aaaa.....aaaaa.....................
+            .............aaaa....aaaa.aaaaaa.......aaaaaaaaaa...aaaa....aaaa.aaaa............aaaa.....aaaaaaaaaa................
+            .............aaaa...aaaaa.aaaaaaa......aaaaaaaaaaa..aaaa....aaaa.aaaa............aaaa.....aaaaaaaaaaa...............
+            .............aaaaaaaaaaaa.aaaaaaa.......aaaaaaaaaaa.aaaa....aaaa.aaaa............aaaa......aaaaaaaaaaa..............
+            .............aaaaaaaaaaa..aaaaaa.........aaaaaaaaaa.aaaa....aaaa.aaaa............aaaa.......aaaaaaaaaa..............
+            .............aaaaaaaaaa...aaaa................aaaaa.aaaa....aaaa.aaaa............aaaa............aaaaa..............
+            .............aaaaaaaaaaa..aaaa...............aaaaaa.aaaaa..aaaaa.aaaa............aaaa...........aaaaaa..............
+            .............aaaa..aaaaa..aaaaaaaaaaa...aaaaaaaaaa...aaaaaaaaaa..aaaaaaaaaaa.....aaaa......aaaaaaaaaa...............
+            .............aaaa..aaaaaa.aaaaaaaaaaaa.aaaaaaaaaaa...aaaaaaaaaa..aaaaaaaaaaaa....aaaa.....aaaaaaaaaaa...............
+            .............aaaa...aaaaa.aaaaaaaaaaaa.aaaaaaaaaa.....aaaaaaaa...aaaaaaaaaaaa....aaaa.....aaaaaaaaaa................
+            ..............aa.....aaa...aaaaaaaaaa...aaaaaaa.........aaaa......aaaaaaaaaa......aa.......aaaaaaa..................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            ....................................................................................................................
+            `, screen2)
+        for (let value of mp.allPlayers()) {
+            if (mp.getPlayerState(value, MultiplayerState.Joined) != 0) {
+                screen2.fillRect(3 + 39 * (value - 1), 40, 37, 61, 15)
+                drawKOLog(value, 4 + 39 * (value - 1), 41, 5, screen2)
+                if (winners.indexOf(value) != -1) {
+                    drawWavyRainbowText(characterSelectText[mp.playerToIndex(value)], screen2)
+                }
+            }
+        }
+    }
+})
 spriteutils.createRenderable(100, function (screen2) {
     if (gameState == "playing" && gameMode == "race") {
         for (let value of mp.allPlayers()) {
@@ -1715,16 +1715,12 @@ function positionSprite (picker: number, upper: number) {
         positionSprite(upper, mp.getPlayerState(upper, MultiplayerState.IsHoldingPlayer))
     }
 }
-scene.onOverlapTile(SpriteKind.Player, assets.tile`myTile11`, function (sprite, location) {
-	
-})
 mp.onButtonEvent(mp.MultiplayerButton.Right, ControllerButtonEvent.Pressed, function (player2) {
     if (gameState == "character-select") {
         changeCharacterSelect(player2, false)
     }
 })
-let textSprite: TextSprite = null
-let characterSelectSprites: Sprite[] = []
+let winners: number[] = []
 let scores: number[] = []
 let myMenu: miniMenu.MenuSprite = null
 let tempImageArray: Image[] = []
@@ -1741,7 +1737,8 @@ let KOLog: number[][] = []
 let row = 0
 let col = 0
 let characterSelectText: TextSprite[] = []
-let winners: number[] = []
+let characterSelectSprites: Sprite[] = []
+let textSprite: TextSprite = null
 let tempSprite: Sprite = null
 let characterTemplates: blockObject.BlockObject[] = []
 let tempPSprite: platformer.PlatformerSprite = null
