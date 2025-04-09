@@ -1153,13 +1153,13 @@ function createCharacters () {
         blockObject.setImageArrayProperty(characterTemplates[6], ImageArrayProp.WalkingRight, assets.animation`bun-walking-right`)
         blockObject.setImageArrayProperty(characterTemplates[6], ImageArrayProp.IdleRight, assets.animation`bun-idle-right`)
         blockObject.setImageProperty(characterTemplates[6], ImageProp.Sideways, img`
-            . . 1 f 1 . . . 
-            b b 1 1 1 1 1 . 
-            3 3 1 f 1 1 . . 
-            1 1 1 1 1 1 1 . 
-            . . 1 1 1 . . . 
+            . . 6 f 6 . . . 
+            b b 6 6 6 6 6 . 
+            3 3 6 f 6 6 . . 
+            6 6 6 6 6 6 6 . 
+            . . 6 6 6 . . . 
             `)
-        blockObject.setStringProperty(characterTemplates[6], StrProp.Name, "BUN")
+        blockObject.setStringProperty(characterTemplates[6], StrProp.Name, "Clive")
         blockObject.setNumberProperty(characterTemplates[6], NumProp.IdleInterval, 100)
         blockObject.setNumberProperty(characterTemplates[6], NumProp.WalkingInterval, 50)
     }
